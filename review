@@ -1,0 +1,622 @@
+<?php require_once('../Connections/connJCM.php'); ?>
+<?php
+session_start();
+$MM_authorizedUsers = "";
+$MM_donotCheckaccess = "true";
+
+// *** Restrict Access To Page: Grant or deny access to this page
+function isAuthorized($strUsers, $strGroups, $UserName, $UserGroup) { 
+  // For security, start by assuming the visitor is NOT authorized. 
+  $isValid = False; 
+
+  // When a visitor has logged into this site, the Session variable MM_Username set equal to their username. 
+  // Therefore, we know that a user is NOT logged in if that Session variable is blank. 
+  
+  if (!empty($UserName)) { 
+    // Besides being logged in, you may restrict access to only certain users based on an ID established when they login. 
+    // Parse the strings into arrays. 
+    $arrUsers = Explode(",", $strUsers); 
+    $arrGroups = Explode(",", $strGroups); 
+    if (in_array($UserName, $arrUsers)) { 
+      $isValid = true; 
+    } 
+    // Or, you may restrict access to only certain users based on their username. 
+    if (in_array($UserGroup, $arrGroups)) { 
+      $isValid = true; 
+    } 
+    if (($strUsers == "") && true) { 
+      $isValid = true; 
+    } 
+  } 
+  return $isValid; 
+}
+
+$MM_restrictGoTo = "Unauthorized.php";
+if (!(isset($_SESSION['MM_Username']) && isAuthorized("",$MM_authorizedUsers, $_SESSION['MM_Username'], $_SESSION['MM_UserGroup']))) {   
+  $MM_qsChar = "?";
+  $MM_referrer = $_SERVER['PHP_SELF'];
+  if (strpos($MM_restrictGoTo, "?")) $MM_qsChar = "&";
+  if (isset($QUERY_STRING) && strlen($QUERY_STRING) > 0) 
+  $MM_referrer .= "?" . $QUERY_STRING;
+  $MM_restrictGoTo = $MM_restrictGoTo. $MM_qsChar . "accesscheck=" . urlencode($MM_referrer);
+  header("Location: ". $MM_restrictGoTo); 
+  exit;
+}
+?>
+<?php
+$colname_rsProposal = "1";
+if (isset($_SESSION['MM_Username'])) {
+  $colname_rsProposal = (get_magic_quotes_gpc()) ? $_SESSION['MM_Username'] : addslashes($_SESSION['MM_Username']);
+}
+mysql_select_db($database_connJCM, $connJCM);
+$query_rsProposal = sprintf("SELECT * FROM rep_proposal_prop WHERE username_prop = '%s'", $colname_rsProposal);
+$rsProposal = mysql_query($query_rsProposal, $connJCM) or die(mysql_error());
+$row_rsProposal = mysql_fetch_assoc($rsProposal);
+$totalRows_rsProposal = mysql_num_rows($rsProposal);
+
+// *** Trying to make a session proposal ID variable equal to the proposal ID in the proposal recordset for use later in the page that reviews the entire application, review.php.
+/* 
+commented this bit out because i started a session a few lines ago.
+session_start(); */
+
+    //set the value of a variable, idProp, to the value of the text field idProp
+	$idProposal = $row_rsProposal['id_prop'];
+
+    //declare a session variable and assign it (as is done in the login behavior)
+	    $GLOBALS['proposalID'] = $idProposal;
+		
+    //register the session variable
+    session_register("proposalID");
+
+mysql_select_db($database_connJCM, $connJCM);
+$query_rsTerm = "SELECT * FROM rep_term_term";
+$rsTerm = mysql_query($query_rsTerm, $connJCM) or die(mysql_error());
+$row_rsTerm = mysql_fetch_assoc($rsTerm);
+$totalRows_rsTerm = mysql_num_rows($rsTerm);
+
+$colname_rsPI = "1";
+if (isset($_SESSION['proposalID'])) {
+  $colname_rsPI = (get_magic_quotes_gpc()) ? $_SESSION['proposalID'] : addslashes($_SESSION['proposalID']);
+}
+mysql_select_db($database_connJCM, $connJCM);
+$query_rsPI = sprintf("SELECT * FROM rep_pi_pi WHERE idprop_pi = %s", $colname_rsPI);
+$rsPI = mysql_query($query_rsPI, $connJCM) or die(mysql_error());
+$row_rsPI = mysql_fetch_assoc($rsPI);
+$totalRows_rsPI = mysql_num_rows($rsPI);
+
+$colname_rsPreviousgrants = "1";
+if (isset($_SESSION['proposalID'])) {
+  $colname_rsPreviousgrants = (get_magic_quotes_gpc()) ? $_SESSION['proposalID'] : addslashes($_SESSION['proposalID']);
+}
+mysql_select_db($database_connJCM, $connJCM);
+$query_rsPreviousgrants = sprintf("SELECT * FROM rep_previousgrants_prev WHERE idprop_prev = %s ORDER BY year_prev ASC", $colname_rsPreviousgrants);
+$rsPreviousgrants = mysql_query($query_rsPreviousgrants, $connJCM) or die(mysql_error());
+$row_rsPreviousgrants = mysql_fetch_assoc($rsPreviousgrants);
+$totalRows_rsPreviousgrants = mysql_num_rows($rsPreviousgrants);
+
+$colname_rsWageSalary = "1";
+if (isset($_SESSION['proposalID'])) {
+  $colname_rsWageSalary = (get_magic_quotes_gpc()) ? $_SESSION['proposalID'] : addslashes($_SESSION['proposalID']);
+}
+mysql_select_db($database_connJCM, $connJCM);
+$query_rsWageSalary = sprintf("SELECT * FROM rep_wagesalary_wasa WHERE idprop_wasa = %s ORDER BY idstat_wasa ASC", $colname_rsWageSalary);
+$rsWageSalary = mysql_query($query_rsWageSalary, $connJCM) or die(mysql_error());
+$row_rsWageSalary = mysql_fetch_assoc($rsWageSalary);
+$totalRows_rsWageSalary = mysql_num_rows($rsWageSalary);
+
+$colname_rsCapExp = "1";
+if (isset($_SESSION['proposalID'])) {
+  $colname_rsCapExp = (get_magic_quotes_gpc()) ? $_SESSION['proposalID'] : addslashes($_SESSION['proposalID']);
+}
+mysql_select_db($database_connJCM, $connJCM);
+$query_rsCapExp = sprintf("SELECT * FROM rep_capitalpurchases_cap WHERE idprop_capexp = %s ORDER BY type_capexp ASC", $colname_rsCapExp);
+$rsCapExp = mysql_query($query_rsCapExp, $connJCM) or die(mysql_error());
+$row_rsCapExp = mysql_fetch_assoc($rsCapExp);
+$totalRows_rsCapExp = mysql_num_rows($rsCapExp);
+?>
+<?php 
+/* 
+commented this out and moved it up directly below the rsProposal recordset so that users don't have to refresh
+to see their current records.  if it screws up will uncomment this part.
+// *** Trying to make a session proposal ID variable equal to the proposal ID in the proposal recordset for use later in the page that reviews the entire application, review.php.
+session_start();
+
+    //set the value of a variable, idProp, to the value of the text field idProp
+	$idProposal = $row_rsProposal['id_prop'];
+
+    //declare a session variable and assign it (as is done in the login behavior)
+	    $GLOBALS['proposalID'] = $idProposal;
+		
+    //register the session variable
+    session_register("proposalID"); */
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Texas State University-San Marcos | REP Online Application Online Application</title>
+<style type="text/css">
+<!--
+.style4 {
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-size: 40px;
+	color: #333399;
+}
+.style6 {
+	font-family: Arial, Helvetica, sans-serif;
+	color: #333399;
+	font-weight: bold;
+}
+.style7 {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	color: #4d3319;
+}
+a.navbar:link {
+	color: #4D3319;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11px;
+}
+a.navbar:visited {
+	color: #4D3319;
+	text-decoration: none;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 10px;
+}
+.style8 {color: #4D3319}
+a.navbar:hover {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	text-decoration: underline;
+}
+a.body:link {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	color: #336699;
+	text-decoration: underline;
+}
+a.body:visited {
+	font-family: Arial, Helvetica, sans-serif;
+	color: #4D3319;
+	text-decoration: underline;
+}
+a.jcm:link{
+font-family: Arial, Helvetica, sans-serif;
+	color: #336699;
+	text-decoration: none;
+
+}
+a.jcm:visited {
+	font-family: Arial, Helvetica, sans-serif;
+	color: #336699;
+	text-decoration: none;
+}
+-->
+</style>
+<style type="text/css">
+<!--
+.style9 {color: #4d3319}
+.style10 {color: #000000}
+.style11 {
+	font-size: 16px;
+	color: #4D3319;
+}
+.style12 {color: #E5E4B4}
+.style15 {color: #003399;
+	font-weight: bold;
+	font-family: Arial, Helvetica, sans-serif;
+}
+.style15 {font-weight: bold; color: #333399;}
+-->
+</style>
+<script type="text/javascript">
+<!-- >
+function reloadIt() {
+isNew = self.location.href
+if(!isNew.match('#')) {
+self.location.replace(isNew + '#')
+alert('You may have to "refresh" this page to see your most current data.')
+}
+}
+
+//-->
+</script>
+</head>
+
+<BODY onLoad="reloadIt()">
+
+
+<table width="650" border="1" align="center" cellpadding="5" cellspacing="0" >
+  <!--DWLayoutTable-->
+  <tr>
+    <td width="650" height="150" valign="top"><table width="100%" border="0" cellpadding="0" cellspacing="0">
+        <!--DWLayoutTable-->
+       <tr>
+    <td width="650" height="150" valign="top"><table width="100%" border="0" cellpadding="0" cellspacing="0">
+         <tr>
+          <td rowspan="3" valign="top"><a href="http://www.txstate.edu"><img src="txstate_logo2.gif" alt="TxState" name="TxState" border="0" id="TxState"></a></td>
+          <td width="180" rowspan="3" valign="top" class="style4"></td>
+          <td width="72" height="38">&nbsp;</td>
+           <td width="302" valign="top"><div align="right" class="style15"><a href="index.php" class="jcm"><font color = "#336699"><span class="style15">Research Enhancement Program</span></a></div></td>        
+         </tr>
+        
+        <tr>
+          <td height="18"></td>
+          <td valign="top"><div align="right" class="style7"><a href="LogOut.php">Log Out </a></div></td>
+        </tr>
+        <tr>
+          <td height="21" colspan="4" valign="top"><div align="center"></div></td>
+        </tr>
+        <tr>
+          <td height="27" colspan="4" valign="top"><table width="100%" border="0" cellpadding="4" cellspacing="0" >
+              <!--DWLayoutTable-->
+           <tr><td colspan="13"><hr></td></tr>
+              <tr align="left">
+                <td width="77" height="27" valign="middle"><div align="center"><a href="PartI.php" class="navbar style12">PI Information </a></div></td>
+                
+                <td width="5" valign="top"><span class="style12">|</span></td>
+                <td width="58" valign="middle"><a href="PartIII.php" class="navbar">IRB/IACUC/Travel</a></td>
+                <td width="3" valign="top"><span class="style12">|</span></td>
+                <td width="76" valign="middle"><a href="PartIV.php" class="navbar">Wages/Salaries</a></td>
+                <td width="4" valign="top"><span class="style12">|</span></td>
+                <td width="103" align="center" valign="middle"><a href="PartV.php" class="navbar">Expenses/Purchases</a></td>
+                <td width="3" valign="top"><span class="style12">|</span></td>
+                <td width="39" align="center" valign="middle"><div align="center" class="style12"><a href="PartVI.php" class="navbar">Upload Narrative/Vita </a></div></td>
+                <td width="3" valign="top"><span class="style12">|</span></td>
+                <td width="64" align="center" valign="middle"><div align="center" class="style12"><a href="Review.php" class="navbar">View App </a></div></td>
+              </tr>
+   <tr><td colspan="13"><hr></td></tr>
+              <tr>
+                <td height="0"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+          </table></td>
+        </tr>
+            </table></td>
+  </tr>
+  <tr>
+    <td height="348" valign="top">      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+        <!--DWLayoutTable-->
+        <tr>
+          <td width="650" ><div align="center">
+            <p class="style6">Application Summary</p><p>
+            <?php echo $row_rsProposal['title_prop']; ?></p> </div>
+            <p class="style7"> <?php echo $row_rsProposal['abstract']; ?></p></td></tr>
+			 <tr>
+                <td colspan="3" class="style7"><div align="center"><a href="Update/updateabstract.php"><img src="update.gif" width="94" height="27" border="0"></a></div></td>
+              </tr>
+           <hr> </p>
+         
+            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td colspan="4" class="style7 style8"><p class="style9"><span class="style10"><span class="style9"><strong>This is the information that is now saved to our records.</strong><br>
+        You can use this page at any time to update your application until the deadline date (listed on the REP Website).<br>
+        After the deadline date, your application becomes permanent.</span></span></p>
+                    <p class="style9"><strong>Review your completed application</strong> on this page, and make any changes by using the &quot;Update&quot; and &quot;Delete&quot; buttons in each section.</p>
+                <p class="style9">**<strong>To append NEW information</strong> (such as adding a PI, wage/salary, expense/purchase or previous grant), use the links in the navigation bar above to complete additional forms. DO NOT use the &quot;update&quot; button.** </p></td>
+              </tr>
+            </table>
+            <table border="0" cellpadding="0" cellspacing="0">
+              <tr >
+                <td colspan="3" class="style6 style12"></td>
+              </tr><tr><td colspan="2"><hr></td></tr>
+              <tr>
+                <td colspan="3" class="style6 style8"><div align="center">PI Information</div></td>
+              </tr>
+              <?php do { ?>
+              <tr>
+                <td class="style7"><strong>
+                  <?php if ($row_rsPI['idstatus_pi']==1) {
+				     print "PI "; 
+				   } elseif ($row_rsPI['idstatus_pi']==2) {
+				     print "Co-PI "; 
+				   } else {
+				     print "NO PI INFORMATION";
+   				   }?>
+    : </strong>
+                <strong> <?php echo $row_rsPI['firstn_pi']; ?> <?php echo $row_rsPI['lastn_pi']; ?></strong>
+                <td class="style7">
+                  <?php if ($row_rsPI['tenure_pi']==1) {
+				     print "Professor"; 
+				   } elseif ($row_rsPI['tenure_pi']==2) {
+				     print "Associate Professor"; 
+				   } 
+				   elseif ($row_rsPI['tenure_pi']==3) {
+				     print "Assistant Professor, Non-First Applicant";
+				   }
+                                   elseif ($row_rsPI['tenure_pi']==4) {
+				     print "Assistant Professor, First Applicant";
+				   }
+				      elseif ($row_rsPI['tenure_pi']==5) {
+				     print "Senior Lecture"; 
+				   }
+				   else {
+				     print "NO TENURE INFORMATION";
+   				   }?>
+                </strong></td>
+              </tr>
+              <tr><td class="style7">
+                <strong>Email</strong>: <?php echo $row_rsPI['email_pi']; ?> <br><strong>College:</strong>
+                    <?php if ($row_rsPI['idcollege_pi']==1) {
+				     print "Applied Arts"; 
+				   } elseif ($row_rsPI['idcollege_pi']==2) {
+				     print "Business Administration"; 
+				   } elseif ($row_rsPI['idcollege_pi']==3) {
+				     print "Education"; 
+				   } elseif ($row_rsPI['idcollege_pi']==4) {
+				     print "Fine Arts and Communication"; 
+				   } elseif ($row_rsPI['idcollege_pi']==5) {
+				     print "Graduate College"; 
+				   } elseif ($row_rsPI['idcollege_pi']==6) {
+				     print "Health Professions"; 
+				   } elseif ($row_rsPI['idcollege_pi']==7) {
+				     print "Liberal Arts"; 
+				   } elseif ($row_rsPI['idcollege_pi']==8) {
+				     print "Science"; 
+				   } elseif ($row_rsPI['idcollege_pi']==9) {
+				     print "University College"; 
+				   } else {
+				     print "NO COLLEGE INFORMATION";
+   				   }?>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="3" class="style7">The applicant
+                    <?php if ($row_rsPI['otherresearch_pi']==1) {
+				print "WILL";
+				} elseif ($row_rsPI['otherresearch_pi']==2) {
+				print "WILL NOT"; 
+				} else {
+				print "?";
+				}
+				 ?>
+    be concurrently working on other external or internally funded research if this proposal were to be funded. </td>
+              </tr>
+              <tr>
+                <td colspan="3" class="style7"><?php echo $row_rsPI['otherresearchdiff_pi']; ?></td>
+              </tr>
+              <tr>
+                <td colspan="3" class="style7"><div align="center"><a href="Update/updateI.php?id_pi=<?php echo $row_rsPI['id_pi']; ?>"><img src="update.gif" width="94" height="27" border="0"></a><a href="Delete/DeleteI.php?id_pi=<?php echo $row_rsPI['id_pi']; ?>"><img src="Delete.gif" width="94" height="27" border="0"></a></div></td>
+              </tr>
+              <?php } while ($row_rsPI = mysql_fetch_assoc($rsPI)); ?>
+            </table>
+                
+             <hr>
+              
+            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr valign="bottom" >
+              <td height="35" colspan="4" class="style6"><div align="center" class="style8">Proposal Documentation </div></td>
+              </tr>
+            <tr class="style7">
+              <td colspan="4"><strong>Title:</strong> <?php echo $row_rsProposal['title_prop']; ?></td>
+            </tr>
+            <tr class="style7">
+              <td colspan="2"><strong>Contact Email:</strong> <?php echo $row_rsProposal['email_prop']; ?></td>
+              <td width="32%">&nbsp;</td>
+              <td width="31%">&nbsp;</td>
+            </tr>
+            <tr class="style7">
+              <td colspan="4"><strong>Human Subjects:</strong> My research
+                  <?php if ($row_rsProposal['human_prop'] == 1) {
+				print "DOES";
+				} elseif ($row_rsProposal['human_prop'] == 2) {
+				print "DOES NOT"; 
+				} else {
+				print "?";
+				}
+				?>
+    involve human subjects. </td>
+            </tr>
+            <tr class="style7">
+              <td colspan="4"><strong>Non-Human Vertebrate Subjects:</strong> My research
+                  <?php if ($row_rsProposal['vert_prop']==1) {
+				print "DOES";
+				} elseif ($row_rsProposal['vert_prop']==2) {
+				print "DOES NOT"; 
+				} else {
+				print "?";
+				}
+				?>
+    involve vertebrate animals.</td>
+            </tr>
+            <tr class="style7">
+              <td colspan="2">&nbsp;</td>
+              <td>&nbsp;</td>
+              <td>&nbsp;</td>
+            </tr><tr><td colspan="4"><hr></td></tr>
+            <tr valign="bottom" >
+              <td height="35" colspan="4" class="style6"><div align="center" class="style8">Travel  </div></td>
+            </tr>
+    
+            <tr class="style7">
+              <td colspan="4"><strong>Destination:</strong> <?php echo $row_rsProposal['destination_prop']; ?></td>
+            </tr>
+           
+            <tr class="style7">
+              <td>Total Travel: </td>
+              <td>$<?php echo $row_rsProposal['travel_prop']; ?></td>
+              <td>&nbsp;</td>
+              <td>&nbsp;</td>
+            </tr>
+             <?php $TravelTotal = $row_rsProposal['travel_prop'];?>
+
+            <tr>
+              <td colspan="4"><div align="center"><a href="Update/updateIII.php?id_prop=<?php echo $row_rsProposal['id_prop']; ?>"><img src="update.gif" width="94" height="27" border="0"></a><a href="Delete/DeleteIII.php?id_prop=<?php echo $row_rsProposal['id_prop']; ?>"><img src="Delete.gif" width="94" height="27" border="0"></a></div></td>
+              </tr>
+</table>
+          <hr>
+            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                      <tr valign="bottom">
+                        <td height="35" colspan="3" class="style6 style8"><div align="center">Wages and/or Salaries </div></td>
+              </tr>
+                      <?php $WasaTotal = 0;?>
+                      <?php do { ?>
+                      <tr class="style7">
+                        <td><strong>Status:
+                        <?php if ($row_rsWageSalary['idstat_wasa']==1) {
+				     print "PI"; 
+				   } elseif ($row_rsWageSalary['idstat_wasa']==2) {
+				     print "Co-PI"; 
+				   } elseif ($row_rsWageSalary['idstat_wasa']==3) {
+				     print "Student"; 
+				   } else {
+				     print "NO STATUS INFORMATION";
+   				   }?>                        
+                        </strong></td>
+                        <td>Period: <?php echo $row_rsWageSalary['period_wasa']; ?></td>
+                        <td><?php $WasaValue = $row_rsWageSalary['amt_wasa'];
+$WasaTotal = $WasaTotal + $WasaValue; ?> </td>
+                      </tr>
+                      <tr class="style7">
+                        <td>Total Amount: $ <?php echo $row_rsWageSalary['amt_wasa']; ?></td>
+                        <td colspan="2">Interval:
+                        <?php if ($row_rsWageSalary['idint_wasa']==1) {
+				     print "Hourly"; 
+				   } elseif ($row_rsWageSalary['idint_wasa']==2) {
+				     print "Monthly"; 
+				   } else {
+				     print "NO INTERVAL INFORMATION";
+   				   }?>                        </td>
+                      </tr>
+                      <tr class="style7">
+                        <td colspan="3"><div align="center"><a href="Update/updateIV.php?id_wasa=<?php echo $row_rsWageSalary['id_wasa']; ?>"><img src="update.gif" width="94" height="27" border="0"></a><a href="Delete/DeleteIV.php?id_wasa=<?php echo $row_rsWageSalary['id_wasa']; ?>"><img src="Delete.gif" width="94" height="27" border="0"></a></div></td>
+                      </tr>
+					  <?php } while ($row_rsWageSalary = mysql_fetch_assoc($rsWageSalary)); ?>
+            </table>
+                              <table width="100%"  border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                  <th width="4%" class="style7" scope="row">&nbsp;</th>
+                                  <td width="86%" class="style7"><strong>Total Wages/Salaries: $<?php echo $WasaTotal ?></strong></td>
+                                  <td width="5%">&nbsp;</td>
+                                  <td width="5%">&nbsp;</td>
+                                </tr>
+            </table><hr>
+                              <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                <tr valign="bottom" >
+                                  <td height="35" colspan="3" class="style6 style8"><div align="center">Maintenance Operating Expenses and/or Capital Purchases </div></td>
+                                </tr>
+								<?php $CapExpTotal = 0;?>
+                                <?php do { ?>
+                                <tr class="style7">
+                                  <td width="200">Type: <?php echo $row_rsCapExp['type_capexp']; ?>
+								  <?php if ($row_rsCapExp['type_capexp']==1) {
+				     print "Maintenance Operating Expense"; 
+				   } elseif ($row_rsCapExp['type_capexp']==2) {
+				     print "Capital Purchase"; 
+				   } else {
+				     print "NO TYPE INFORMATION";
+   				   }?></td>
+                                  <td width="249">Name: <?php echo $row_rsCapExp['name_capexp']; ?></td>
+                                  <td width="200">Cost: $ <?php echo $row_rsCapExp['cost_capexp']; ?><?php $CapExpValue = $row_rsCapExp['cost_capexp'];
+$CapExpTotal = $CapExpTotal + $CapExpValue; ?> </td>
+                                </tr>
+                                <tr class="style7">
+                                  <td colspan="3"><div align="center"><a href="Update/updateV.php?id_capexp=<?php echo $row_rsCapExp['id_capexp']; ?>"><img src="update.gif" width="94" height="27" border="0"></a><a href="Delete/DeleteV.php?id_capexp=<?php echo $row_rsCapExp['id_capexp']; ?>"><img src="Delete.gif" width="94" height="27" border="0"></a></div></td>
+                                </tr>
+                                <?php } while ($row_rsCapExp = mysql_fetch_assoc($rsCapExp)); ?>
+            </table>
+                              
+                              <table width="100%"  border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                  <th width="4%" class="style7" scope="row"><div align="left"><strong> </strong></div></th>
+                                  <th width="96%" class="style7" scope="row"><div align="left"><strong>Total Maintenance Operating Expenses and/or Capital Purchases: $<?php echo $CapExpTotal ?></strong></div></th>
+                                </tr>
+                                <tr>
+                                  <th colspan="2" class="style7" scope="row">&nbsp;</th>
+                                </tr><tr><td colspan=4><hr></td></tr>
+                                <tr >
+                                  <th height="15" colspan="2" class="style7" scope="row"><div align="left" class="style8">
+                                    <div align="center" class="style6 style11"><br>Project Total </div>
+                                  </div></th>
+                                </tr>
+                                <tr>
+                                  <th colspan="2" class="style7" scope="row"><div align="left">
+                                    <p>Travel + Wages/Salaries + Maintenance Operating Expenses and Capital Purchases = $
+                                      <?php $BigTotal = $TravelTotal + $WasaTotal + $CapExpTotal;
+                                      	echo $BigTotal ."<br>"; 
+						
+if ($BigTotal > 25000.0)
+							{
+							echo "<font color ='red'><br>Alert! Your total budget exceeds the allowed amount of $25,000. Please make adjustments on your project budget.<br></font>";
+
+
+							} 
+					
+							?>
+
+</p>
+                                    </div></th>
+                                </tr>
+                                <tr ></tr><tr><td colspan="2"> <hr></td></tr><tr>
+                                  <th height="19" colspan="2" class="style6 style8" scope="row"><br>Narrative/Vita</th>
+                                </tr>
+                                <tr>
+                                  <th height="26" colspan="2" class="style6" scope="row"><ul class="style7">
+                                    <li>
+                                      <div align="left">To view the Narrative/Vita on record, click the link &quot;Narrative/Vita&quot; below.</div>
+                                    </li>
+                                    <li>
+                                      <div align="left">To update the Narrative/Vita, make any changes, and save the Narrative/Vita on your computer. You will then upload the revised Narrative/Vita by clicking the &quot;Upload Narrative/Vita&quot; link on the menu bar at the top of this page.</div>
+                                    </li>
+                               
+                                  </ul></th>
+                                </tr>
+                                <tr>
+                                  <th height="26" colspan="2" class="style6" scope="row">
+								
+			<?php
+			  $the_rename=$row_rsProposal["username_prop"];
+				$dir="Uploads/".$the_rename;
+			$dh = @ opendir($dir);
+
+while (($file = @ readdir($dh)) !== false) {
+    if($file != "." && $file != "..") {
+        
+        $i++;
+		echo "$i. <a href='$dir/$file'>$file</a><br />";
+    }
+	
+	}
+	
+@ closedir($dh);					  
+								  
+?></td>
+                                </tr>
+                              </table></td>
+        </tr>
+    </table></td>
+  </tr>
+  <tr>
+    <td height="60" valign="top"><div align="center"><br>
+      <div align="center"><span class="style7">Office of the Associate Vice President for Research<br>
+        For questions regarding application submission contact: Michael Blanda at <a
+ href="mailto:mb29@txstate.edu">mb29@txstate.edu</a> , x 2314 </span> </div>
+    </div></td>
+  </tr>
+</table>
+</body>
+</html>
+<?php
+mysql_free_result($rsProposal);
+
+mysql_free_result($rsTerm);
+
+mysql_free_result($rsPI);
+
+mysql_free_result($rsPreviousgrants);
+
+mysql_free_result($rsWageSalary);
+
+mysql_free_result($rsCapExp);
+?>
