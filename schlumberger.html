@@ -1,0 +1,312 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<title>Human Factors | Final Project</title>
+
+<link href="css/styles.css" rel="stylesheet" type="text/css" media="all" />
+
+<!--Functionality Tabs-->
+
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
+
+    <script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+
+    <script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+
+    <link rel="stylesheet" href="/resources/demos/style.css" />
+
+    <script>
+
+    $(function() {
+
+        $( "#tabs" ).tabs();
+
+    });
+
+    </script>
+
+<!--End Functionality Tabs-->
+
+
+
+<!--Start Graph 1-->
+
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+
+    <script type="text/javascript">
+
+      google.load('visualization', '1', {packages: ['linechart']});
+
+    google.load('visualization', '1', { packages: ['table'] });
+
+	  google.load("visualization", "1", {packages:["corechart"]})
+	  
+	  google.load('visualization', '1', {packages:['gauge']});
+	  
+	  //google.load('visualization', '1', {packages:['piechart']});	  
+    </script>
+
+    
+
+    <script type="text/javascript">
+
+    var visualization1;
+
+    var visualization;
+
+	var visulization2;
+
+	//var visulization3;
+	
+    function drawVisualization() {
+
+      // To see the data that this visualization uses, browse to
+
+      var query = new google.visualization.Query(
+
+          'https://docs.google.com/spreadsheet/pub?key=0AthMivjoX8WjdEVMNklOajdGQThpVnFxTURvdVozRFE&single=true&gid=0&output=html');  
+
+      // Apply query language.
+
+      //query.setQuery('SELECT A,B,C,D, E, F, G WHERE A > 7200 and A < 7400');
+
+	  
+
+      // Send the query with a callback function.
+
+      query.send(handleQueryResponse);
+
+    }
+
+    
+
+    function handleQueryResponse(response) {
+
+      if (response.isError()) {
+
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+
+        return;
+
+      }
+
+
+
+      var options = {      hAxes:[{title:'Depth'}],
+
+	  					vAxes:[{title: 'Range'}],
+
+                       'width':700,
+
+                       'height':650};
+
+	  			   
+
+      var data = response.getDataTable();
+
+	  var data1 = data;
+
+	  var numRows = data.getNumberOfRows();
+
+	  var numCols = data.getNumberOfColumns();	  
+
+	  //data1.removeColumns(2, 12);
+
+      visualization = new google.visualization.ScatterChart(document.getElementById('visualization'));
+
+      visualization.draw(data1, options);
+
+      visualization1 = new google.visualization.LineChart(document.getElementById('visualization1'));
+
+      visualization1.draw(data1, options);  
+
+	  visualization2 = new google.visualization.Table(document.getElementById('visualization2'));
+
+      visualization2.draw(data1, options);
+
+	  //visualization3 = new google.visualization.PieChart(document.getElementById('visualization3'));
+
+      //visualization3.draw(data1, options);       
+
+    }
+
+    
+
+
+
+    google.setOnLoadCallback(drawVisualization);
+
+	google.load('visualization', '1', {packages: ['linechart']});
+
+    </script>    
+
+<!--end Chart 1-->
+
+</head>
+
+
+
+<body>
+
+<div id="head">
+
+ <div id="head_cen">
+
+  <div id="head_sup" class="head_pad">
+
+  
+
+    <h1 class="logo"><a href="index.html">nig</a></h1>
+
+    <ul>    
+
+     <li><a href="about.html">About</a></li>  
+
+     <li><a class="active" href="index.html">Home</a></li>     
+
+   </ul>
+
+   
+
+  </div>
+
+ </div>
+
+</div>
+
+<div id="content">
+
+ <div id="content_cen">
+
+  <div id="content_sup" class="head_pad">
+
+   <div id="welcom_pan">
+
+    <h2><span>Visual</span>DISPLAYS</h2>
+
+    <p>
+
+<b>CURVE INFORMATION</b><br />
+
+DEPT .F                                                :DEPTH (BOREHOLE) {F10.1}<br />
+
+GR_EDTC.GAPI                                           :Gamma Ray {F13.4}<br />
+
+CMFF .CFCF                                             :CMR Free Fluid {F13.4}<br />
+
+CMRP_3MS.CFCF                                          :CMR 3ms Porosity {F13.4}<br />
+
+TCMR .CFCF                                             :Total CMR Porosity {F13.4}<br />
+
+KSDR .MD                                               :Permeability from CMR - SDR Model {F13.4}<br />
+
+KTIM .MD                                               :Permeability from CMR - Timur Model {F13.4}</p>
+
+
+
+   </div>
+
+   <div id="welcom_pan">
+
+       <p><div id="tabs">
+
+    <ul>
+
+        <li><a href="#tabs-1">Visual 1</a></li>
+
+        <li><a href="#tabs-2">Visual 2</a></li>
+
+        <li><a href="#tabs-3">Visual 3</a></li>
+
+        <li><a href="#tabs-4">Visual 4</a></li>             
+
+                                                                    
+
+    </ul>
+    <div id="tabs-1">
+
+        <div style="height: 700px; width: 750px;" ><img src="images/well_log.png" /></div>
+
+    </div>
+    
+    <div id="tabs-2">
+
+        <div id="visualization2" style="height: 700px; width: 750px;" ></div>
+
+    </div>
+
+    <div id="tabs-3">
+
+        <div id="visualization1" style="height: 700px; width: 750px;" ></div>
+
+    </div>
+
+    <div id="tabs-4">
+
+        <div id="visualization" style="height: 700px; width: 750px;" ></div>
+
+    </div>
+
+</div>
+
+
+
+</p></div>
+
+ 
+
+  </div>
+
+  
+
+ </div>
+
+ 
+
+</div>
+
+<div id="foot">
+
+ <div id="foot_cen">
+
+ <h6><a href="index.html">mcube</a></h6>
+
+ <ul>
+
+     <li><a href="">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
+
+      <li class="space">|</li>
+
+     <li><a class="active" href="index.html">Home</a></li>
+
+     <li class="space">|</li>
+
+     <li><a href="about.html">About</a></li>
+
+     <li class="space">|</li>
+
+     <li><a href="">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a></li>
+
+
+
+
+
+
+
+   </ul>
+
+ <p>© Copyright 2012. Designed by: <a href="mailto:nd1083txstate.edu" target="_blank">Nigel David</a></p>
+
+ </div>
+
+</div>
+
+</body>
+
+</html>
+
